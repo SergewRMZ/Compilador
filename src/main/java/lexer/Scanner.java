@@ -30,6 +30,7 @@ public class Scanner {
 
     private String source;
 
+    // CONSTRUCTOR
     public Scanner(String source){
         this.source = source + " ";
         this.tokens = new ArrayList<>();
@@ -38,9 +39,120 @@ public class Scanner {
         this.index = 0;
     }
 
+    // Limpiar el Token
     private void resetToken () {
         this.state = 0;
         this.lexema = "";
+    }
+
+    public List<Token> scan(){        
+        for (this.index = 0; this.index < source.length(); this.index++) {
+            char c = source.charAt(this.index);
+
+            switch (this.state) {
+                case 0:
+                    if (c == '>') {
+                        this.state = 1;
+                    }
+                    
+                    else if (c == '<') {
+                        this.state = 4;
+                    }
+                    
+                    else if (c == '=') {
+                        this.state = 7;
+                    }
+                    
+                    else if (c == '!') {
+                        this.state = 10;
+                    }
+                    
+                    else if (Character.isLetter(c)) {
+                        this.state = 13;
+                    }
+                    
+                    else if (Character.isDigit(c)) {
+                        this.state = 15;
+                    }
+
+                    else if (c == '"') {
+                        this.state = 24;
+                    }
+
+                    else if (c == '/') {
+                        this.state = 26;
+                    }
+                    
+                    this.lexema += c;
+                    break;
+
+                case 1:
+                    scanOperadorMayor(c);
+                    break;
+
+                case 4: 
+                    scanOperadorMenor(c);
+                    break;
+                
+                case 7:
+                    scanOperadorIgualdad(c);
+                    break;
+                
+                case 10: 
+                    scanOperadorBang(c);
+                    break;
+
+                case 13:
+                    scanIdentificador(c);
+                    break;
+
+                case 15:
+                    scanUnsignedNumber(c);
+                    break;
+                
+                case 16:
+                    scanUnsignedNumberDouble(c);
+                    break;
+
+                case 17:
+                    scanNumberOrExp(c);
+                    break;
+
+                case 18:
+                    scanSignedExponent(c);
+                    break;
+
+                case 19:
+                    scanValueExponent(c);
+                    break;
+
+                case 20:
+                    scanValueExponentTwo(c);
+                    break;
+
+                case 24:
+                    scanStrings (c);
+                    break;
+
+                case 26:
+                    commentStart(c);
+                    break;
+                    
+                case 27:
+                    commentBody(c);
+                    break;
+
+                case 28:
+                    commentEnd(c);
+                    break;
+
+                case 29:
+                    commentOnlineComment(c);
+                    break;
+            }
+        } 
+
+        return tokens;
     }
 
     private void scanOperadorMayor (char c) {
@@ -156,6 +268,7 @@ public class Scanner {
         }
     }
 
+    // Determinar si es un número exponencial
     private void scanNumberOrExp (char c) {
         if (Character.isDigit(c)) {
             this.lexema += c;
@@ -211,85 +324,55 @@ public class Scanner {
         }
     }
 
-    public List<Token> scan(){        
-        for (this.index = 0; this.index < source.length(); this.index++) {
-            char c = source.charAt(this.index);
-            
-            switch (this.state) {
-                case 0:
-                    if (c == '>') {
-                        this.state = 1;
-                    }
-                    
-                    else if (c == '<') {
-                        this.state = 4;
-                    }
-                    
-                    else if (c == '=') {
-                        this.state = 7;
-                    }
-                    
-                    else if (c == '!') {
-                        this.state = 10;
-                    }
-                    
-                    else if (Character.isLetter(c)) {
-                        this.state = 13;
-                    }
-                    
-                    else if (Character.isDigit(c)) {
-                        this.state = 15;
-                    }
-                    
-                    this.lexema += c;
-                    break;
+    private void scanStrings (char c) {
+        if (c == '"') {
+            this.lexema += c;
+            Token t = new Token(TipoToken.STRING, lexema);
+            tokens.add(t);
+            this.resetToken();
+        }
 
-                case 1:
-                    scanOperadorMayor(c);
-                    break;
+        else if (c == '\n') {
+            System.err.println("Se detecta salto");
+        }
 
-                case 4: 
-                    scanOperadorMenor(c);
-                    break;
-                
-                case 7:
-                    scanOperadorIgualdad(c);
-                    break;
-                
-                case 10: 
-                    scanOperadorBang(c);
-                    break;
+        else {
+            lexema += c;
+        }
+    }
 
-                case 13:
-                    scanIdentificador(c);
-                    break;
+    /** COMENTARIOS 
+     * Después de scanear comentarios, debe de continuar leyendo tokens **/
 
-                case 15:
-                    scanUnsignedNumber(c);
-                    break;
-                
-                case 16:
-                    scanUnsignedNumberDouble(c);
-                    break;
+    private void commentStart (char c) {
+        if (c == '*') this.state = 27;
+        else if (c == '/') this.state = 30;
+        this.lexema += c;
+        // System.out.println("Start");
+    }
 
-                case 17:
-                    scanNumberOrExp(c);
-                    break;
+    private void commentBody (char c) {
+        if (c == '*') 
+            this.state = 28;
 
-                case 18:
-                    scanSignedExponent(c);
-                    break;
+        this.lexema += c;
 
-                case 19:
-                    scanValueExponent(c);
-                    break;
+        // System.out.println("Body");
+    }
 
-                case 20:
-                    scanValueExponentTwo(c);
-                    break;
-            }
-        } 
+    private void commentEnd (char c) {
+        if (c == '/') this.resetToken();
+        else if (c == '*') this.state = 28;
+        else this.state = 27;
+        this.lexema += c;
 
-        return tokens;
+        // System.out.println("End");
+
+    }
+
+    private void commentOnlineComment (char c) {
+        if (c == '\n') this.resetToken();
+        else this.lexema += c;
+        // System.out.println("Línea");
     }
 }
