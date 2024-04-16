@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import javax.management.RuntimeErrorException;
+
 public class Scanner {
     private List<Token> tokens;
     private int state;
@@ -82,6 +84,50 @@ public class Scanner {
                     else if (c == '/') {
                         this.state = 26;
                     }
+
+                    else if (Character.isWhitespace(c)) {
+                        this.state = 33;
+                    }
+
+                    else if (c == '+') {
+                        this.state = 35;
+                    }
+
+                    else if (c == '-') {
+                        this.state = 36;
+                    }
+
+                    else if (c == '*') {
+                        this.state = 37;
+                    }
+
+                    else if (c == ';') {
+                        this.state = 38;
+                    }
+
+                    else if (c == ',') {
+                        this.state = 39;
+                    }
+
+                    else if (c == '.') {
+                        this.state = 40;
+                    }
+
+                    else if (c == '(') {
+                        this.state = 41;
+                    }
+
+                    else if (c == ')') {
+                        this.state = 42;
+                    }
+
+                    else if (c == '{') {
+                        this.state = 43;
+                    }
+
+                    else if (c == '}') {
+                        this.state = 44;
+                    }
                     
                     this.lexema += c;
                     break;
@@ -148,6 +194,50 @@ public class Scanner {
 
                 case 29:
                     commentOnlineComment(c);
+                    break;
+
+                case 33:
+                    scanDelim (c);
+                    break;
+
+                case 35:
+                    scanPlus  (c);
+                    break;
+
+                case 36:
+                    scanMinus(c);
+                    break;
+
+                case 37:
+                    scanStar(c);
+                    break;
+
+                case 38:
+                    scanSemiColon(c);
+                    break;
+
+                case 39:
+                    scanComma(c);
+                    break;
+                
+                case 40:
+                    scanDot(c);
+                    break;
+
+                case 41:
+                    scanLeftParen(c);
+                    break;
+                
+                case 42:
+                    scanRightParen(c);
+                    break;
+
+                case 43:
+                    scanLeftBrace(c);
+                    break;
+
+                case 44:
+                    scanRightBrace(c);
                     break;
             }
         } 
@@ -333,7 +423,7 @@ public class Scanner {
         }
 
         else if (c == '\n') {
-            System.err.println("Se detecta salto");
+            throw new RuntimeErrorException(null, "Se detecto salto de linea");
         }
 
         else {
@@ -347,8 +437,17 @@ public class Scanner {
     private void commentStart (char c) {
         if (c == '*') this.state = 27;
         else if (c == '/') this.state = 30;
+
+        // Crea token de '/'
+        else {
+            this.lexema += c;
+            Token t = new Token(TipoToken.SLASH, lexema);
+            tokens.add(t);
+            this.resetToken();
+            return;
+        }
+
         this.lexema += c;
-        // System.out.println("Start");
     }
 
     private void commentBody (char c) {
@@ -364,6 +463,7 @@ public class Scanner {
         if (c == '/') this.resetToken();
         else if (c == '*') this.state = 28;
         else this.state = 27;
+
         this.lexema += c;
 
         // System.out.println("End");
@@ -374,5 +474,76 @@ public class Scanner {
         if (c == '\n') this.resetToken();
         else this.lexema += c;
         // System.out.println("Línea");
+    }
+
+    // DELIMITADORES
+    private void scanDelim (char c) {
+        if (Character.isWhitespace(c)) 
+            this.lexema += c;
+
+        else {
+            this.index --;
+            this.resetToken();
+        }
+    }
+
+    private void scanPlus (char c) {
+        Token t = new Token(TipoToken.PLUS, lexema);
+        tokens.add(t);
+        this.resetToken();
+    }
+
+    private void scanMinus (char c) {
+        Token t = new Token(TipoToken.MINUS, lexema);
+        tokens.add(t);
+        this.resetToken();
+    }
+
+    private void scanStar (char c) {
+        Token t = new Token(TipoToken.STAR, lexema);
+        tokens.add(t);
+        this.resetToken();
+    }
+
+    private void scanSemiColon (char c) {
+        Token t = new Token(TipoToken.SEMICOLON, lexema);
+        tokens.add(t);
+        this.resetToken();
+    }
+
+    private void scanComma (char c) {
+        Token t = new Token(TipoToken.COMMA, lexema);
+        tokens.add(t);
+        this.resetToken();
+    }
+
+    private void scanDot (char c) {
+        Token t = new Token(TipoToken.DOT, lexema);
+        tokens.add(t);
+        this.resetToken();
+    }
+
+    private void scanLeftParen (char c) {
+        Token t = new Token(TipoToken.LEFT_PAREN, lexema);
+        tokens.add(t);
+        this.resetToken();
+    }
+
+    private void scanRightParen (char c) {
+        Token t = new Token(TipoToken.RIGHT_PAREN, lexema);
+        tokens.add(t);
+        this.resetToken();
+    }
+
+    private void scanLeftBrace (char c) {
+        Token t = new Token(TipoToken.LEFT_BRACE, lexema);
+        tokens.add(t);
+        this.resetToken();
+    }
+
+    private void scanRightBrace (char c) {
+        Token t = new Token(TipoToken.LEFT_PAREN, lexema);
+        tokens.add(t);
+        this.resetToken();
     }
 }
